@@ -1,24 +1,16 @@
 ''' Functions that group steps in main routine. 
 The function forcing should be in the main script. '''
 
-from leqger import schemes
-from main import forcing
-
-def build_F(q, t):
-    ''' builds time derivative forcing '''
-    
-    F = forcing(q,t)
-    
-    return F
+from leqger import time_schemes
 
 def advance(q, t, dt, scheme = 'euler'):
     ''' time steps state vector q according to the chosen scheme '''
     
     if scheme == 'euler':
-        q_n = schemes.euler(q, t, dt)
+        q_n = time_schemes.euler(q, t, dt)
         
     if scheme == 'runge_kutta':
-        q_n = schemes.runge_kutta(q, t, dt)
+        q_n = time_schemes.runge_kutta(q, t, dt)
         
     return q_n
 

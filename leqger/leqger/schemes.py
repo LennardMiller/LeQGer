@@ -1,9 +1,6 @@
 ''' collection of numerical schemes '''
 
 from leqger import steps
-import os 
-
-print(os.path.basename(__file__))
 
 def euler(q, t, dt):
     ''' euler time stepping '''

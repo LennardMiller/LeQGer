@@ -1,13 +1,11 @@
-''' 2D test of scheme with dq/dt = sin(2pi*t)*exp(-(x - x0)^2/(2*sigma^2)). 
-All the solutions are negative cosines. '''
-
 import matplotlib.pyplot as plt
 import numpy as np
+from leqger import space_schemes
 
 # define grid parameters
 
 L = 10
-N = 10 # number of grid cells, Number of points is this +1
+N = 3 # number of grid cells, Number of points is this value +1
 
 delta = L/N
 
@@ -15,11 +13,11 @@ delta = L/N
 
 crit = 't_fin'
 t = 0
-t_fin = 2
+t_fin = 10
 
 # time step
 
-dt = 0.0243
+dt = 0.1
 
 # initial conditions
 
@@ -36,11 +34,13 @@ for n in range(N + 1):
         
         q[n, m] = -1/(2*np.pi)*np.exp(-1/(2*sigma**2)*((x - x0)**2 + (y - y0)**2))
     
+# define forcing
 
 def forcing(q, t):
-    ''' builds time derivative forcing '''
+    
+    ''' builds tau '''
         
-    F = np.zeros([N + 1, N + 1])
+    tau = np.zeros([N + 1, N + 1])
     
     for n in range(N + 1):
         for m in range(N +1):
@@ -48,7 +48,16 @@ def forcing(q, t):
             x = n*delta
             y = m*delta
             
-            F[n,m] = np.sin(2*np.pi*t)*np.exp(-1/(2*sigma**2)*((x - x0)**2 + (y - y0)**2))
+            tau[n,m] = np.sin(2*np.pi*t)*np.exp(-1/(2*sigma**2)*((x - x0)**2 + (y - y0)**2)) #exponential envelope of sinusoidal oscillation in x/y
+    
+    return tau
+
+# choose which spacial schemes to use in constructing F
+
+def build_F(q, t):
+    ''' builds time derivative forcing of dq/dt = F'''
+    
+    F = forcing(q,t)
     
     return F
 
@@ -56,6 +65,8 @@ def forcing(q, t):
 
 q_out = [q]
 
+
+# start calculations
 
 if __name__ == '__main__':
     
@@ -70,8 +81,8 @@ if __name__ == '__main__':
     while True: # main loop
         
         tau = forcing(q, t)
-    
-        q = steps.advance(q, t, dt, scheme = 'euler') # time step q
+        
+        q = steps.advance(q, t, dt, scheme = 'runge_kutta') # time step q
         
         q_out = steps.output(q_out, q) # save output
         
@@ -86,7 +97,7 @@ if __name__ == '__main__':
     
     # plot solution    
         
-    plt.plot(np.array(list(range(0, np.shape(q_out)[0])))*dt, q_out[:,5,5])
+    plt.plot(np.array(list(range(0, np.shape(q_out)[0])))*dt, q_out[:,1,1])
     plt.xlabel('t')
     plt.ylabel('q')
 
