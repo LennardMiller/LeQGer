@@ -15,7 +15,7 @@ delta = L/N
 
 crit = 't_fin'
 t = 0
-t_fin = 0.5
+t_fin = 2
 
 # time step
 
@@ -60,7 +60,8 @@ q_out = [q]
 if __name__ == '__main__':
     
     ''' defining the forcing function outside the __main__ block lets me define it 
-    in the same script as the input parameters and the main loop without causing 
+    in the same script as the input parameters and the main loop. This way I can 
+    import it in the modules steps.py and schemes.py without causing 
     a circular import error (leqger functions importing main, main importing 
     leqger...)''' 
 

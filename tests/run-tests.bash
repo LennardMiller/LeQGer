@@ -1,3 +1,3 @@
 #!/usr/bin/env bash
 
-pytest tests/1D_test.py
+pytest tests/2D_time_integration/main.py

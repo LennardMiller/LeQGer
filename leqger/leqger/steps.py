@@ -1,12 +1,15 @@
-''' Functions that group steps in main routine '''
+''' Functions that group steps in main routine. 
+The function forcing should be in the main script. '''
 
 from leqger import schemes
-import numpy as np
+from main import forcing
 
 def build_F(q, t):
     ''' builds time derivative forcing '''
     
-    return np.sin(t)
+    F = forcing(q,t)
+    
+    return F
 
 def advance(q, t, dt, scheme = 'euler'):
     ''' time steps state vector q according to the chosen scheme '''
@@ -40,4 +43,6 @@ def output(q_output, q):
     
     ''' writes output into different vector q_output '''
     
-    return np.append(q_output, q)
+    q_output.append(q)
+    
+    return q_output
