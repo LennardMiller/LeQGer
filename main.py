@@ -5,9 +5,9 @@ from leqger import space_schemes
 # define grid parameters
 
 L = 10
-N = 3 # number of grid cells, Number of points is this value +1
+N = 3 # number of points
 
-delta = L/N
+delta = L/(N - 1)
 
 # define stopping criterion (critical time vs. fixed number of time steps)
 
@@ -25,9 +25,9 @@ x0 = L/2
 y0 = L/2
 sigma = 1
 
-q = np.zeros([N + 1, N + 1])
-for n in range(N + 1):
-    for m in range(N +1):
+q = np.zeros([N, N])
+for n in range(N):
+    for m in range(N):
         
         x = n*delta
         y = m*delta
@@ -40,10 +40,10 @@ def forcing(q, t):
     
     ''' builds tau '''
         
-    tau = np.zeros([N + 1, N + 1])
+    tau = np.zeros([N, N])
     
-    for n in range(N + 1):
-        for m in range(N +1):
+    for n in range(N):
+        for m in range(N):
             
             x = n*delta
             y = m*delta

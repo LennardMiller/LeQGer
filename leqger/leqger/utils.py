@@ -2,6 +2,7 @@
 The function forcing should be in the main script. '''
 
 from leqger import time_schemes
+import numpy as np
 
 def advance(q, t, dt, scheme = 'euler'):
     ''' time steps state vector q according to the chosen scheme '''
