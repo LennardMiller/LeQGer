@@ -3,12 +3,11 @@
 import numpy as np
 from leqger import space_schemes
 import matplotlib.pyplot as plt
-from scipy.linalg import solve
 
-N = 64
+N = 100
 L = 1
 
-delta = L/(N - 1)
+delta = L/N
 
 psi = np.zeros([N, N])
 q = np.zeros([N, N])
@@ -16,22 +15,23 @@ q = np.zeros([N, N])
 for n in range(N):
     for m in range(N):
         
-        x = n*delta
-        y = m*delta
+        x = (n + 1/2)*delta
+        y = (m + 1/2)*delta
         
-        # need to choose a function with zero normal derivatives at boundaries
+        # need to choose a function with zero dirichlet at boundaries
         
-        psi[n, m] = np.cos(2*np.pi*x)*np.cos(2*np.pi*y)
-        q[n,m] = -8*np.pi**2*np.cos(2*np.pi*x)*np.cos(2*np.pi*y)
+        psi[n, m] = x*(x-1)*y*(y-1) 
+        q[n,m] =  2*y*(y-1) + 2*x*(x-1)
 
-lap = space_schemes.lap_psi(N, delta)
+lap = space_schemes.lap_psi_face(N, delta)
 
 psi_vec = space_schemes.vectorise(psi)
 q_num_vec = lap@psi_vec
 q_num = space_schemes.matricise(q_num_vec)
 
 q_vec = space_schemes.vectorise(q)
-psi_num_vec = solve(lap, q_vec)
+lap_inv = np.linalg.inv(lap)
+psi_num_vec = lap_inv@q_vec
 psi_num = space_schemes.matricise(psi_num_vec)
 psi_num += psi[0,0] - psi_num[0,0] 
 
@@ -61,3 +61,25 @@ plt.show()
 plt.imshow((space_schemes.matricise(lap@psi_num_vec) - q))
 plt.title('error of applying laplacian and its inverse')
 plt.colorbar()
+
+# show gauss integral equality (analytical value is 2/3)
+
+Int_surf = np.sum(np.sum(q, axis = 0), axis = 0)*delta**2
+Int_line = 0
+
+for i in range(N):
+    # southern and northern boundaries
+    
+    Int_line += -3*psi[i,0] + 1/3*psi[i,1]
+    Int_line += -3*psi[i,-1] + 1/3*psi[i,-2]
+    
+    # western and eastern boundaries
+    
+    Int_line += -3*psi[0,i] + 1/3*psi[1,i]
+    Int_line += -3*psi[-1,i] + 1/3*psi[-2,i]
+
+print(f'Line integral of boundary flux = {Int_line}')
+print(f'Surface integral of q = {Int_surf}')
+print('analytic value is -2/3')
+    
+

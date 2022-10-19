@@ -2,23 +2,6 @@
 
 import numpy as np
 
-def lap(q, delta, BC = 'q_Bruno'):
-    '''standard 2nd order Laplacian '''
-    
-    q_pad = pad(q, BC = 'q_Bruno')
-    
-    Lap = (q_pad[2:,1:-1] + q_pad[:-2,1:-1] + q_pad[1:-1,2:] + q_pad[1:-1,:-2] -4*q_pad[1:-1, 1:-1])/delta**2
-    
-    return Lap
-    
-def pad(q, BC):
-    ''' function to pad fields with different boundary conditions'''
-    
-    if BC == 'psi':
-        q = q
-    return q
-        
-
 def vectorise(psi):
     
     '''vectorises field for x-coordinates to be grouped together, from 0 increasing '''
@@ -66,8 +49,9 @@ def mat_coor(N, i,j,k,l):
     
     return (m,n)
 
-def lap_psi(N, delta): 
-    ''' computes matrix laplacian to act on vectorised psi '''
+def lap_psi_corner(N, delta): 
+    ''' computes matrix laplacian to act on vectorised psi, with neumann 
+    boundary conditions on an corner-centred scheme.'''
     
     tlap = np.zeros([N**2, N**2])
     
@@ -132,6 +116,80 @@ def lap_psi(N, delta):
     tlap[mat_coor(N,-1,-1,-1,-1)] = -4
     tlap[mat_coor(N,-1,-1,-2,-1)] = 2
     tlap[mat_coor(N,-1,-1,-1,-2)] = 2
+    
+    
+    
+    tlap /= delta**2
+    
+    return tlap
+
+def lap_psi_face(N, delta): 
+    ''' computes matrix laplacian to act on vectorised psi, with neumann 
+    boundary conditions on an corner-centred scheme.'''
+    
+    tlap = np.zeros([N**2, N**2])
+    
+    # scheme in the interior
+    
+    for i in range(1, N - 1):
+        for j in range(1, N - 1):
+            tlap[mat_coor(N,i,j,i,j)] = -4
+            tlap[mat_coor(N,i,j,i+1,j)] = 1
+            tlap[mat_coor(N,i,j,i-1,j)] = 1
+            tlap[mat_coor(N,i,j,i,j+1)] = 1
+            tlap[mat_coor(N,i,j,i,j-1)] = 1
+            
+    #scheme on eastern and western boundaries
+    
+    for j in range(1, N - 1):
+        # western
+        tlap[mat_coor(N,0,j,0,j)] = -6
+        tlap[mat_coor(N,0,j,1,j)] = 4/3
+        tlap[mat_coor(N,0,j,0,j+1)] = 1
+        tlap[mat_coor(N,0,j,0,j-1)] = 1
+        
+        # eastern
+        tlap[mat_coor(N,-1,j,-1,j)] = -6
+        tlap[mat_coor(N,-1,j,-2,j)] = 4/3
+        tlap[mat_coor(N,-1,j,-1,j+1)] = 1
+        tlap[mat_coor(N,-1,j,-1,j-1)] = 1
+        
+    # scheme on northern and southern boundaries
+    
+    for i in range(1, N - 1):
+        # southern
+        tlap[mat_coor(N,i,0,i,0)] = -6
+        tlap[mat_coor(N,i,0,i,1)] = 4/3
+        tlap[mat_coor(N,i,0,i+1,0)] = 1
+        tlap[mat_coor(N,i,0,i-1,0)] = 1
+    
+        # northern
+        tlap[mat_coor(N,i,-1,i,-1)] = -6
+        tlap[mat_coor(N,i,-1,i,-2)] = 4/3
+        tlap[mat_coor(N,i,-1,i+1,-1)] = 1
+        tlap[mat_coor(N,i,-1,i-1,-1)] = 1
+        
+    # corners
+    
+    # south-west
+    tlap[mat_coor(N,0,0,0,0)] = -8
+    tlap[mat_coor(N,0,0,1,0)] = 4/3
+    tlap[mat_coor(N,0,0,0,1)] = 4/3
+    
+    # north-west
+    tlap[mat_coor(N,0,-1,0,-1)] = -8
+    tlap[mat_coor(N,0,-1,1,-1)] = 4/3
+    tlap[mat_coor(N,0,-1,0,-2)] = 4/3
+    
+    # south-east
+    tlap[mat_coor(N,-1,0,-1,0)] = -8
+    tlap[mat_coor(N,-1,0,-1,1)] = 4/3
+    tlap[mat_coor(N,-1,0,-2,0)] = 4/3
+    
+    # north-east
+    tlap[mat_coor(N,-1,-1,-1,-1)] = -8
+    tlap[mat_coor(N,-1,-1,-2,-1)] = 4/3
+    tlap[mat_coor(N,-1,-1,-1,-2)] = 4/3
     
     
     
