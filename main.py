@@ -1,11 +1,18 @@
 import matplotlib.pyplot as plt
 import numpy as np
-from leqger import space_schemes
+from leqger import utils
+from leqger import schemes
+
+# define physical parameters
+
+beta = 1
+nu = 1
+tau0 = 0.0001
+L = 10
 
 # define grid parameters
 
-L = 10
-N = 3 # number of points
+N = 100 # number of points
 
 delta = L/(N - 1)
 
@@ -13,30 +20,31 @@ delta = L/(N - 1)
 
 crit = 't_fin'
 t = 0
-t_fin = 10
+t_fin = 1
 
 # time step
 
 dt = 0.1
 
-# initial conditions
-
-x0 = L/2
-y0 = L/2
-sigma = 1
+# initiate q
 
 q = np.zeros([N, N])
+
+# initial conditions
+
 for n in range(N):
     for m in range(N):
         
         x = n*delta
         y = m*delta
         
-        q[n, m] = -1/(2*np.pi)*np.exp(-1/(2*sigma**2)*((x - x0)**2 + (y - y0)**2))
+        q[n, m] = 0
     
+q = schemes.vectorise(q)
+
 # define forcing
 
-def forcing(q, t):
+def forcing(tau0, L, delta):
     
     ''' builds tau '''
         
@@ -45,59 +53,47 @@ def forcing(q, t):
     for n in range(N):
         for m in range(N):
             
-            x = n*delta
             y = m*delta
             
-            tau[n,m] = np.sin(2*np.pi*t)*np.exp(-1/(2*sigma**2)*((x - x0)**2 + (y - y0)**2)) #exponential envelope of sinusoidal oscillation in x/y
-    
+            tau[n,m] = tau0*np.pi/L*np.sin(np.pi*y/L)
+            
+    tau = schemes.vectorise(tau)
+            
     return tau
-
-# choose which spacial schemes to use in constructing F
-
-def build_F(q, t):
-    ''' builds time derivative forcing of dq/dt = F'''
-    
-    F = forcing(q,t)
-    
-    return F
 
 # initiate output vector
 
-q_out = [q]
+q_out = [schemes.matricise(q)]
 
 
 # start calculations
 
-if __name__ == '__main__':
-    
-    ''' defining the forcing function outside the __main__ block lets me define it 
-    in the same script as the input parameters and the main loop. This way I can 
-    import it in the modules steps.py and schemes.py without causing 
-    a circular import error (leqger functions importing main, main importing 
-    leqger...)''' 
+# build matrix to inverse q
 
-    from leqger import steps
+M_b_inv, M, lap_psi_inv, M_int_x, M_int_y, M_b = schemes.build_matrices(N, delta)
+
+# build forcing matrix
+
+tau = forcing(tau0, L, delta)
+
+while True: # main loop
     
-    while True: # main loop
-        
-        tau = forcing(q, t)
-        
-        q = steps.advance(q, t, dt, scheme = 'runge_kutta') # time step q
-        
-        q_out = steps.output(q_out, q) # save output
-        
-        t = t + dt # advance time
-        
-        if steps.check_stop(crit, t = t + dt, t_fin = t_fin): # checks if the next time step will be computed or not
-            t = t - dt
-            break
-        
-        
-    q_out = np.array(q_out)
+    psi = lap_psi_inv@q
     
-    # plot solution    
-        
-    plt.plot(np.array(list(range(0, np.shape(q_out)[0])))*dt, q_out[:,1,1])
-    plt.xlabel('t')
-    plt.ylabel('q')
+    Jac = schemes.vectorise(schemes.J(schemes.matricise(psi), schemes.matricise(q), delta))
+    
+    lap_q = schemes.lap_q(N, delta, dt, q, Jac, tau, M, M_int_x, M_int_y, M_b_inv, M_b)
+    
+    q = q + (-Jac + nu*lap_q + tau)*dt # time step q
+    
+    q_out = utils.output(q_out, q) # save output
+    
+    t = t + dt # advance time
+    
+    if utils.check_stop(crit, t = t + dt, t_fin = t_fin): # checks if the next time step will be computed or not
+        t = t - dt
+        break
+    
+    
+q_out = np.array(q_out)
 
